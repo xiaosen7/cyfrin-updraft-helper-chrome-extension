@@ -1,11 +1,11 @@
 {
   "extensionDescription": {
-    "description": "Extension description",
-    "message": "Chrome extension boilerplate developed with Vite, React and Typescript"
+    "description": "Help you learn web3 course in Updraft",
+    "message": "Updraft helper"
   },
   "extensionName": {
-    "description": "Extension name",
-    "message": "Chrome extension boilerplate"
+    "description": "Updraft helper",
+    "message": "Updraft helper"
   },
   "toggleTheme": {
     "message": "Toggle theme"

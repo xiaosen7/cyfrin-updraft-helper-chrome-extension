@@ -9,6 +9,7 @@ export default withPageConfig({
   resolve: {
     alias: {
       '@src': srcDir,
+      '@': srcDir,
     },
   },
   plugins: [isDev && makeEntryPointPlugin()],

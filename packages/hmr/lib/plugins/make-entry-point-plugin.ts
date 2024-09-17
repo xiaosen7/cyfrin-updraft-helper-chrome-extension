@@ -1,4 +1,4 @@
-import fs from 'node:fs';
+import fs, { existsSync } from 'node:fs';
 import path from 'node:path';
 import type { PluginOption } from 'vite';
 
@@ -52,7 +52,9 @@ export function makeEntryPointPlugin(): PluginOption {
     },
     closeBundle() {
       cleanupTargets.forEach(target => {
-        fs.unlinkSync(target);
+        if (existsSync(target)) {
+          fs.unlinkSync(target);
+        }
       });
     },
   };
