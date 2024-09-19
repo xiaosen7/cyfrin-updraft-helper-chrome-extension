@@ -1,9 +1,9 @@
-import { once, throttle } from 'lodash-es';
-import Emittery from 'emittery';
-import { z } from 'zod';
-import { zodResponseFormat } from 'openai/helpers/zod';
-import OpenAI from 'openai';
 import { EdgeSpeechTTS } from '@lobehub/tts';
+import Emittery from 'emittery';
+import { once, throttle } from 'lodash-es';
+import OpenAI from 'openai';
+import { zodResponseFormat } from 'openai/helpers/zod';
+import { z } from 'zod';
 
 export interface ILearnEnglishVideo2Options {
   video: HTMLVideoElement;
@@ -13,6 +13,9 @@ export interface ILearnEnglishVideo2Options {
   autoPreTranslateSentenceCount?: number;
   autoPreDubSentenceCount?: number;
   text: string;
+  openAI: {
+    apiKey: string;
+  };
 }
 
 export interface ISentence {
@@ -83,6 +86,7 @@ export class UpdraftHelper extends Emittery<ELearnEnglishVideo2EventPayloads> {
   tokenUsed = 0;
 
   constructor(private options: ILearnEnglishVideo2Options) {
+    console.log({ options });
     super();
 
     this.autoPreDubSentenceCount = options.autoPreDubSentenceCount ?? 0;
@@ -249,7 +253,7 @@ export class UpdraftHelper extends Emittery<ELearnEnglishVideo2EventPayloads> {
 
     this.emit(ELearnEnglishVideo2EventNames.TranslateSentencesStart, indices);
 
-    const apiKey = '';
+    const apiKey = this.options.openAI.apiKey;
     // const apiUrl = 'https://api.openai.com/v1/chat/completions';
 
     const openai = new OpenAI({

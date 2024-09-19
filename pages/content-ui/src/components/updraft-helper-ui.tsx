@@ -30,6 +30,7 @@ import AutoSizer from 'react-virtualized-auto-sizer';
 import Draggable from 'react-draggable';
 import { Resizable } from 're-resizable';
 import { useStorage } from '@src/core/storage';
+import { Input } from './ui/input';
 
 const initializer = new UpdraftInitializer();
 
@@ -42,20 +43,6 @@ export const UpdraftHelperUI = () => {
 
   const handleSentenceSelect = useMemoizedFn((index: number) => {
     setSelectedSentences(prev => (prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]));
-  });
-
-  const handleTranslate = useMemoizedFn(async () => {
-    if (selectedSentences.length === 0 || !helper) return;
-    setSelectedSentences([]);
-    helper.translateSentences(selectedSentences);
-  });
-
-  const handleMini = useMemoizedFn(() => {
-    storage.isMini = true;
-    storage.size = {
-      width: 800,
-      height: 150,
-    };
   });
 
   useEffect(() => {
@@ -75,6 +62,9 @@ export const UpdraftHelperUI = () => {
           autoPreDubSentenceCount: storage.preDubCount,
           autoPreTranslateSentenceCount: storage.postTranslateCount,
           text,
+          openAI: {
+            apiKey: storage.openAI.apiKey,
+          },
         }),
       );
     });
@@ -124,9 +114,6 @@ export const UpdraftHelperUI = () => {
               <Button variant="ghost" size="icon" onClick={() => setActiveTab('text')} className="mb-4">
                 <FileText className={cn('h-6 w-6', activeTab === 'text' && 'text-primary')} />
               </Button>
-              <Button variant="ghost" size="icon" onClick={handleMini} className="mb-4">
-                <Minimize2 className="h-6 w-6" />
-              </Button>
             </div>
 
             {/* Right Content */}
@@ -167,9 +154,24 @@ export const UpdraftHelperUI = () => {
                         {storage.preDubCount}
                       </span>
                     </div>
-                    <Button onClick={handleTranslate} disabled={selectedSentences.length === 0}>
-                      Translate Selected
-                    </Button>
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-medium w-36">OpenAI API Key:</span>
+                      <Input
+                        type="text"
+                        value={storage.openAI.apiKey}
+                        onChange={e =>
+                          (storage.openAI = {
+                            ...storage.openAI,
+                            apiKey: e.target.value,
+                          })
+                        }
+                        className="border p-2 rounded w-48"
+                      />
+                    </div>
+
+                    <div className="text-sm text-warning mt-4">
+                      <p>Warning: If you change your OpenAI API key, please reload this page to apply the changes.</p>
+                    </div>
                   </div>
                 )}
                 {activeTab === 'appearance' && (
@@ -235,7 +237,7 @@ const SentenceList = ({
   return (
     <AutoSizer>
       {({ height, width }) => (
-        <List ref={listRef} height={height} itemCount={helper.sentences.length} itemSize={80} width={width}>
+        <List ref={listRef} height={height} itemCount={helper.sentences.length} itemSize={200} width={width}>
           {({ index, style }: any) => (
             <Sentence
               index={index}
@@ -355,42 +357,15 @@ const TextContent: React.FC<{ helper: UpdraftHelper }> = ({ helper }) => {
     helper.activateSentenceByIndex(index);
   };
 
-  const handlePlayAudio = (index: number) => {
-    const sentence = helper.sentences[index];
-    if (sentence.audio?.generated) {
-      sentence.audio.play();
-    }
-  };
-
   return (
     <div className="flex h-full">
       <div className="w-1/2 pr-2 border-r overflow-auto">
         <h3 className="text-lg font-semibold mb-2 sticky top-0 bg-background p-2">English</h3>
         <div className="space-y-2">
           {helper.sentences.map((sentence, index) => (
-            <div
-              key={index}
-              className={cn(
-                'p-2 rounded transition-colors duration-200 ease-in-out cursor-pointer',
-                selectedSentence === index ? 'bg-primary text-primary-foreground' : 'hover:bg-primary/10',
-              )}
-              onClick={() => handleSentenceClick(index)}>
-              <span className="inline-block">{sentence.en}</span>
-              <div className="flex items-center mt-1 text-xs">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-1"
-                  onClick={e => {
-                    e.stopPropagation();
-                    handlePlayAudio(index);
-                  }}
-                  disabled={!sentence.audio?.generated}>
-                  {sentence.audio?.generated ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-                </Button>
-                {sentence.audio?.generated && <AudioLines className="ml-1 w-4" />}
-              </div>
-            </div>
+            <span onClick={() => handleSentenceClick(index)} key={index} className="inline-block hover:text-">
+              {sentence.en}
+            </span>
           ))}
         </div>
       </div>

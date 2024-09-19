@@ -1,4 +1,4 @@
-import { useMount, useUpdate } from 'ahooks';
+import { useUpdate } from 'ahooks';
 import { useEffect } from 'react';
 
 const defaultOptions = {
@@ -14,6 +14,9 @@ const defaultOptions = {
   postTranslateCount: 0,
   isMini: false,
   opacity: 1,
+  openAI: {
+    apiKey: '',
+  },
 };
 
 const createStorage = <T>(defaultOptions: T) => {
@@ -56,7 +59,10 @@ const createStorage = <T>(defaultOptions: T) => {
           };
         }
 
-        return load(key as string);
+        const loaded = load(key as string);
+        console.log('key', key, loaded);
+
+        return loaded;
       },
       set(target, key, value) {
         save(key as string, value);
