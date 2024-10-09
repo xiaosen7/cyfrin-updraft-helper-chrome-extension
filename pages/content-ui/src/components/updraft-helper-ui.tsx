@@ -1,3 +1,6 @@
+/* eslint-disable jsx-a11y/mouse-events-have-key-events */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
+/* eslint-disable jsx-a11y/click-events-have-key-events */
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -6,38 +9,26 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@src/lib/utils';
-import type { ISentence } from '../ai/products/learn-english-video-2';
-import { UpdraftHelper } from '../ai/products/learn-english-video-2';
-import { useMemoizedFn, useMount, useRequest, useUpdate } from 'ahooks';
-import {
-  Settings,
-  Paintbrush,
-  AlignLeft,
-  BarChart2,
-  Hand,
-  Minimize2,
-  Loader2,
-  AudioLines,
-  Bot,
-  FileText,
-  Play,
-  Pause,
-} from 'lucide-react';
+import type { ISentence } from '@/core/updraft-helper';
+import { chatModels, UpdraftHelper } from '@/core/updraft-helper';
+import { useMemoizedFn, useUpdate } from 'ahooks';
+import { Settings, AlignLeft, BarChart2, Hand, Loader2, AudioLines, Bot, FileText, Play } from 'lucide-react';
+import type { EUpdraftInitializerEvents, IUpdraftInitializerListener } from '@src/core/initializer';
 import { UpdraftInitializer } from '@src/core/initializer';
-import { combineVttContent } from '@src/ai/products/_utils/vtt-parser';
 import { FixedSizeList as List } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import Draggable from 'react-draggable';
 import { Resizable } from 're-resizable';
 import { useStorage } from '@src/core/storage';
 import { Input } from './ui/input';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from './ui/select';
 
 const initializer = new UpdraftInitializer();
 
 export const UpdraftHelperUI = () => {
   const [selectedSentences, setSelectedSentences] = useState<number[]>([]);
   const storage = useStorage();
-  const [activeTab, setActiveTab] = useState<'options' | 'appearance' | 'sentences' | 'states' | 'text'>('sentences');
+
   const ref = useRef<HTMLDivElement>(null);
   const [helper, setHelper] = useState<UpdraftHelper>();
 
@@ -51,8 +42,13 @@ export const UpdraftHelperUI = () => {
 
   useEffect(() => {
     initializer.init();
-    let onResolve: (...args: any) => any;
-    initializer.on(initializer.Events.Change, ({ title, sentences, video, description, text }) => {
+    const listener: IUpdraftInitializerListener<EUpdraftInitializerEvents.Change> = ({
+      title,
+      sentences,
+      video,
+      description,
+      text,
+    }) => {
       setHelper(
         new UpdraftHelper({
           sentences,
@@ -64,14 +60,17 @@ export const UpdraftHelperUI = () => {
           text,
           openAI: {
             apiKey: storage.openAI.apiKey,
+            baseURL: storage.openAI.baseURL,
           },
         }),
       );
-    });
+    };
+    initializer.on(initializer.Events.Change, listener);
 
     return () => {
-      initializer.off(initializer.Events.Change, onResolve);
+      initializer.off(initializer.Events.Change, listener);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -84,7 +83,7 @@ export const UpdraftHelperUI = () => {
           y: ui.y,
         };
       }}>
-      <div ref={ref} className="fixed z-[999]" style={{ opacity: storage.opacity }}>
+      <div ref={ref} className="fixed z-40" style={{ opacity: storage.opacity }}>
         <Resizable
           minHeight={400}
           minWidth={600}
@@ -98,35 +97,35 @@ export const UpdraftHelperUI = () => {
           }}>
           <Card className={cn('shadow-lg h-full flex')}>
             {/* Left Menu */}
-            <div className="w-16 border-r flex flex-col items-center py-4 bg-muted overflow-auto">
+            <div className="w-16 min-w-16 border-r flex flex-col items-center py-4 bg-muted overflow-auto">
               <Button variant="ghost" size="icon" className="mb-4 mover">
                 <Hand className="h-6 w-6" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => setActiveTab('options')} className="mb-4">
-                <Settings className={cn('h-6 w-6', activeTab === 'options' && 'text-primary')} />
+              <Button variant="ghost" size="icon" onClick={() => (storage.tab = 'sentences')} className="mb-4">
+                <AlignLeft className={cn('h-6 w-6', storage.tab === 'sentences' && 'text-primary')} />
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => setActiveTab('sentences')} className="mb-4">
-                <AlignLeft className={cn('h-6 w-6', activeTab === 'sentences' && 'text-primary')} />
+              <Button variant="ghost" size="icon" onClick={() => (storage.tab = 'text')} className="mb-4">
+                <FileText className={cn('h-6 w-6', storage.tab === 'text' && 'text-primary')} />
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => setActiveTab('states')} className="mb-4">
-                <BarChart2 className={cn('h-6 w-6', activeTab === 'states' && 'text-primary')} />
+              <Button variant="ghost" size="icon" onClick={() => (storage.tab = 'options')} className="mb-4">
+                <Settings className={cn('h-6 w-6', storage.tab === 'options' && 'text-primary')} />
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => setActiveTab('text')} className="mb-4">
-                <FileText className={cn('h-6 w-6', activeTab === 'text' && 'text-primary')} />
+              <Button variant="ghost" size="icon" onClick={() => (storage.tab = 'states')} className="mb-4">
+                <BarChart2 className={cn('h-6 w-6', storage.tab === 'states' && 'text-primary')} />
               </Button>
             </div>
 
             {/* Right Content */}
-            {!helper && <Loading loading className="mx-auto mt-4" />}
-            <div className="flex-grow flex flex-col">
-              {activeTab !== 'sentences' && (
-                <div className="p-4 border-b flex items-center justify-between">
-                  <h2 className="text-lg font-semibold capitalize">{activeTab}</h2>
-                </div>
-              )}
 
-              <div className={cn('flex-grow overflow-auto', activeTab !== 'sentences' && 'p-4')}>
-                {activeTab === 'options' && (
+            <div className="flex-grow flex flex-col overflow-hidden">
+              <div className="p-4 border-b flex items-center justify-between">
+                <h2 className="text-lg font-semibold capitalize">{storage.tab}</h2>
+              </div>
+
+              <div className={cn('flex-grow overflow-auto', storage.tab !== 'sentences' && 'p-4')}>
+                {!helper && <Loading loading className="m-auto mt-4" />}
+
+                {storage.tab === 'options' && (
                   <div className="space-y-4">
                     <div className="flex items-center gap-4">
                       <span className="text-sm font-medium w-36">Auto Pre-translate:</span>
@@ -169,12 +168,68 @@ export const UpdraftHelperUI = () => {
                       />
                     </div>
 
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-medium w-36">OpenAI API base URL:</span>
+                      <Input
+                        type="text"
+                        value={storage.openAI.baseURL}
+                        onChange={e =>
+                          (storage.openAI = {
+                            ...storage.openAI,
+                            baseURL: e.target.value,
+                          })
+                        }
+                        className="border p-2 rounded w-48"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-medium w-36">Select a Model:</span>
+                      <Select
+                        value={storage.openAI.model}
+                        onValueChange={model =>
+                          (storage.openAI = {
+                            ...storage.openAI,
+                            model,
+                          })
+                        }>
+                        <SelectTrigger className="border p-2 rounded w-48">
+                          <SelectValue placeholder="Select a Model" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>Models</SelectLabel>
+                            {chatModels.map(x => (
+                              <SelectItem key={x} value={x}>
+                                {x}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        type="text"
+                        value={storage.openAI.model}
+                        onChange={e =>
+                          (storage.openAI = {
+                            ...storage.openAI,
+                            model: e.target.value,
+                          })
+                        }
+                        className="border p-2 rounded w-48"
+                        placeholder="Or Enter a custom model"
+                      />
+                    </div>
+
                     <div className="text-sm text-warning mt-4">
-                      <p>Warning: If you change your OpenAI API key, please reload this page to apply the changes.</p>
+                      <p>
+                        Warning: If you change your OpenAI API key or base url, please reload this page to apply the
+                        changes.
+                      </p>
                     </div>
                   </div>
                 )}
-                {activeTab === 'appearance' && (
+                {storage.tab === 'appearance' && (
                   <div>
                     <p>You can now resize or drag the window.</p>
                     <div className="flex items-center gap-4 mt-4">
@@ -191,15 +246,15 @@ export const UpdraftHelperUI = () => {
                     </div>
                   </div>
                 )}
-                {activeTab === 'sentences' && helper && (
-                  <SentenceList
+                {storage.tab === 'sentences' && helper && (
+                  <Sentences
                     helper={helper}
                     selectedSentences={selectedSentences}
                     onSelectedSentencesChange={handleSentenceSelect}
                   />
                 )}
-                {activeTab === 'states' && helper && <States helper={helper} />}
-                {activeTab === 'text' && helper && <TextContent helper={helper} />}
+                {storage.tab === 'states' && helper && <States helper={helper} />}
+                {storage.tab === 'text' && helper && <Text helper={helper} />}
               </div>
             </div>
           </Card>
@@ -209,7 +264,7 @@ export const UpdraftHelperUI = () => {
   );
 };
 
-const SentenceList = ({
+const Sentences = ({
   helper,
   selectedSentences,
   onSelectedSentencesChange,
@@ -338,56 +393,79 @@ const States: React.FC<{ helper: UpdraftHelper }> = ({ helper }) => {
   );
 };
 
-const TextContent: React.FC<{ helper: UpdraftHelper }> = ({ helper }) => {
-  const [selectedSentence, setSelectedSentence] = useState<number | null>(null);
+const Text: React.FC<{ helper: UpdraftHelper }> = ({ helper }) => {
+  const [mouseOverIndex, setMouseOverIndex] = useState<number>(-1);
+  const [currentSentenceIndex, setCurrentSentenceIndex] = useState(helper.currentSentenceIndex);
+  const enListRef = useRef<HTMLDivElement>(null);
+  const zhListRef = useRef<HTMLDivElement>(null);
+  const update = useUpdate();
+
+  useEffect(() => {}, [helper, setCurrentSentenceIndex]);
 
   useEffect(() => {
-    const handleCurrentSentenceChange = (index: number) => {
-      setSelectedSentence(index);
-    };
-
-    helper.on(helper.Events.CurrentSentenceChange, handleCurrentSentenceChange);
+    helper.on(helper.Events.CurrentSentenceChange, setCurrentSentenceIndex);
+    helper.on(helper.Events.TranslateSentenceChange, update);
 
     return () => {
-      helper.off(helper.Events.CurrentSentenceChange, handleCurrentSentenceChange);
+      helper.off(helper.Events.CurrentSentenceChange, setCurrentSentenceIndex);
+      helper.off(helper.Events.TranslateSentenceChange, update);
     };
-  }, [helper]);
+  }, [helper, update]);
+
+  useEffect(() => {
+    Array.from(enListRef.current?.children ?? [])[currentSentenceIndex]?.scrollIntoView({
+      block: 'center',
+    });
+    Array.from(zhListRef.current?.children ?? [])[currentSentenceIndex]?.scrollIntoView({
+      block: 'center',
+    });
+  }, [currentSentenceIndex]);
 
   const handleSentenceClick = (index: number) => {
     helper.activateSentenceByIndex(index);
   };
 
   return (
-    <div className="flex h-full">
-      <div className="w-1/2 pr-2 border-r overflow-auto">
-        <h3 className="text-lg font-semibold mb-2 sticky top-0 bg-background p-2">English</h3>
-        <div className="space-y-2">
+    <div
+      className="flex h-full w-full"
+      onMouseLeave={() => {
+        setMouseOverIndex(-1);
+      }}>
+      <div className="w-1/2 max-w-[50%] pr-2 border-r overflow-auto">
+        <div className="space-y-2" ref={enListRef}>
           {helper.sentences.map((sentence, index) => (
-            <span onClick={() => handleSentenceClick(index)} key={index} className="inline-block hover:text-">
+            <span
+              onMouseOver={() => {
+                setMouseOverIndex(index);
+              }}
+              onClick={() => handleSentenceClick(index)}
+              key={index}
+              className={cn(
+                'cursor-pointer ease-in duration-200',
+                mouseOverIndex === index && 'text-green-500',
+                currentSentenceIndex === index && 'text-green-500',
+              )}>
               {sentence.en}
             </span>
           ))}
         </div>
       </div>
       <div className="w-1/2 pl-2 overflow-auto">
-        <h3 className="text-lg font-semibold mb-2 sticky top-0 bg-background p-2">Chinese</h3>
-        <div className="space-y-2">
+        <div className="space-y-2" ref={zhListRef}>
           {helper.sentences.map((sentence, index) => (
-            <div
+            <span
+              onMouseOver={() => {
+                setMouseOverIndex(index);
+              }}
+              onClick={() => handleSentenceClick(index)}
               key={index}
               className={cn(
-                'p-2 rounded transition-colors duration-200 ease-in-out cursor-pointer',
-                selectedSentence === index ? 'bg-primary text-primary-foreground' : 'hover:bg-primary/10',
-              )}
-              onClick={() => handleSentenceClick(index)}>
-              <span className="inline-block">{sentence.translated || sentence['zh-CN']}</span>
-              {sentence.translated && (
-                <div className="flex items-center mt-1 text-xs">
-                  <Bot className="w-4 h-4 mr-1" />
-                  <span>Translated</span>
-                </div>
-              )}
-            </div>
+                'cursor-pointer',
+                mouseOverIndex === index && 'text-green-500',
+                currentSentenceIndex === index && 'text-green-500',
+              )}>
+              {sentence.translated || '...'}
+            </span>
           ))}
         </div>
       </div>

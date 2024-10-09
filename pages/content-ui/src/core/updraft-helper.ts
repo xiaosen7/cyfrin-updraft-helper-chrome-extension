@@ -3,7 +3,40 @@ import Emittery from 'emittery';
 import { once, throttle } from 'lodash-es';
 import OpenAI from 'openai';
 import { zodResponseFormat } from 'openai/helpers/zod';
+import type { ChatModel } from 'openai/resources';
 import { z } from 'zod';
+
+export const chatModels: ChatModel[] = [
+  'o1-preview',
+  'o1-preview-2024-09-12',
+  'o1-mini',
+  'o1-mini-2024-09-12',
+  'gpt-4o',
+  'gpt-4o-2024-08-06',
+  'gpt-4o-2024-05-13',
+  'chatgpt-4o-latest',
+  'gpt-4o-mini',
+  'gpt-4o-mini-2024-07-18',
+  'gpt-4-turbo',
+  'gpt-4-turbo-2024-04-09',
+  'gpt-4-0125-preview',
+  'gpt-4-turbo-preview',
+  'gpt-4-1106-preview',
+  'gpt-4-vision-preview',
+  'gpt-4',
+  'gpt-4-0314',
+  'gpt-4-0613',
+  'gpt-4-32k',
+  'gpt-4-32k-0314',
+  'gpt-4-32k-0613',
+  'gpt-3.5-turbo',
+  'gpt-3.5-turbo-16k',
+  'gpt-3.5-turbo-0301',
+  'gpt-3.5-turbo-0613',
+  'gpt-3.5-turbo-1106',
+  'gpt-3.5-turbo-0125',
+  'gpt-3.5-turbo-16k-0613',
+];
 
 export interface ILearnEnglishVideo2Options {
   video: HTMLVideoElement;
@@ -15,6 +48,11 @@ export interface ILearnEnglishVideo2Options {
   text: string;
   openAI: {
     apiKey: string;
+    baseURL: string;
+    /**
+     * @default 'gpt-4o-mini'
+     */
+    model?: string & ChatModel;
   };
 }
 
@@ -86,7 +124,6 @@ export class UpdraftHelper extends Emittery<ELearnEnglishVideo2EventPayloads> {
   tokenUsed = 0;
 
   constructor(private options: ILearnEnglishVideo2Options) {
-    console.log({ options });
     super();
 
     this.autoPreDubSentenceCount = options.autoPreDubSentenceCount ?? 0;
@@ -178,7 +215,7 @@ export class UpdraftHelper extends Emittery<ELearnEnglishVideo2EventPayloads> {
   #updateCurrentSentence = throttle(this.#updateCurrentSentenceImmediately);
 
   #updatePreTranslateSentences = throttle(() => {
-    if (this.autoPreTranslateSentenceCount <= 0 || this.currentSentenceIndex < 0) {
+    if (this.autoPreTranslateSentenceCount <= 0 || this.currentSentenceIndex < 0 || this.options.video.paused) {
       return;
     }
 
@@ -199,7 +236,7 @@ export class UpdraftHelper extends Emittery<ELearnEnglishVideo2EventPayloads> {
   });
 
   #updatePreDubSentences = throttle(() => {
-    if (this.autoPreDubSentenceCount <= 0 || this.currentSentenceIndex < 0) {
+    if (this.autoPreDubSentenceCount <= 0 || this.currentSentenceIndex < 0 || this.options.video.paused) {
       return;
     }
 
@@ -253,11 +290,9 @@ export class UpdraftHelper extends Emittery<ELearnEnglishVideo2EventPayloads> {
 
     this.emit(ELearnEnglishVideo2EventNames.TranslateSentencesStart, indices);
 
-    const apiKey = this.options.openAI.apiKey;
-    // const apiUrl = 'https://api.openai.com/v1/chat/completions';
-
     const openai = new OpenAI({
-      apiKey,
+      apiKey: this.options.openAI.apiKey,
+      baseURL: this.options.openAI.baseURL || undefined,
       dangerouslyAllowBrowser: true,
     });
 
@@ -266,7 +301,7 @@ export class UpdraftHelper extends Emittery<ELearnEnglishVideo2EventPayloads> {
     });
 
     const completion = await openai.beta.chat.completions.parse({
-      model: 'gpt-4o-mini',
+      model: this.options.openAI.model || 'gpt-4o-mini',
       messages: [
         {
           role: 'system',

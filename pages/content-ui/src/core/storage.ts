@@ -10,13 +10,16 @@ const defaultOptions = {
     x: 0,
     y: 0,
   },
-  preDubCount: 0,
-  postTranslateCount: 0,
+  preDubCount: 5,
+  postTranslateCount: 10,
   isMini: false,
   opacity: 1,
   openAI: {
     apiKey: '',
+    baseURL: 'https://api.openai.com/v1',
+    model: 'gpt-4o-mini',
   },
+  tab: 'options',
 };
 
 const createStorage = <T>(defaultOptions: T) => {
@@ -41,7 +44,6 @@ const createStorage = <T>(defaultOptions: T) => {
       this.subs.delete(fn);
     },
     notify() {
-      console.log('notify', this.subs.size);
       this.subs.forEach(fn => fn());
     },
   };
@@ -60,7 +62,6 @@ const createStorage = <T>(defaultOptions: T) => {
         }
 
         const loaded = load(key as string);
-        console.log('key', key, loaded);
 
         return loaded;
       },
