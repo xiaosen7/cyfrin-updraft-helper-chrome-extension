@@ -1,7 +1,7 @@
 {
-  "name": "updraft-helper-chrome-extension",
+  "name": "cyfrin-updraft-helper-chrome-extension",
   "version": "0.3.2",
-  "description": "chrome extension boilerplate",
+  "description": "Cyfrin Updraft Helper is a video-based English learning assistant chrome extension designed to enhance users' listening and speaking skills through real-time subtitles, translations, and speech synthesis in [Cyfrin Updraft](https://updraft.cyfrin.io/).",
   "license": "MIT",
   "repository": {
     "type": "git",
