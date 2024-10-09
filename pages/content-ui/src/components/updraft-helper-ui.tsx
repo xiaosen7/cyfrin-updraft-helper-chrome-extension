@@ -61,6 +61,7 @@ export const UpdraftHelperUI = () => {
           openAI: {
             apiKey: storage.openAI.apiKey,
             baseURL: storage.openAI.baseURL,
+            model: storage.openAI.model,
           },
         }),
       );

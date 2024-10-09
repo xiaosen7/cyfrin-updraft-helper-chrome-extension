@@ -52,7 +52,8 @@ export interface ILearnEnglishVideo2Options {
     /**
      * @default 'gpt-4o-mini'
      */
-    model?: string & ChatModel;
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    model?: (string & {}) | ChatModel;
   };
 }
 
