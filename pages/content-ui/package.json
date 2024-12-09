@@ -28,7 +28,7 @@
     "@extension/ui": "workspace:*",
     "@ffmpeg/ffmpeg": "^0.12.10",
     "@ffmpeg/util": "^0.12.1",
-    "@huggingface/transformers": "3.0.0-alpha.15",
+    "@huggingface/transformers": "3.1.2",
     "@lobehub/tts": "^1.24.3",
     "@radix-ui/react-checkbox": "^1.1.1",
     "@radix-ui/react-collapsible": "^1.1.0",
